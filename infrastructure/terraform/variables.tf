@@ -12,7 +12,7 @@ variable "sbname" {
 
 variable "funcname" {
   default = {
-    name = "demo-function-terraform"
+    name = "demo-function"
   }
 }
 
