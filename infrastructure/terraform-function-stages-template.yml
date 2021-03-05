@@ -219,5 +219,5 @@ stages:
       parameters:
         environment: ${{ parameters.environment }}
         environmentDisplayName: ${{ parameters.environmentDisplayName }} 
-        servicename: function-${{ parameters.environment }}
+        servicename: demo-function-terraform-${{ parameters.environment }}
         serviceDisplayName: Function_${{ parameters.environmentDisplayName }}    

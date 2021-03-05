@@ -9,7 +9,7 @@ trigger:
       - infrastructure
 
 variables:
-- group: terraform-secrets
+- group: terraform-commons
 
 stages:
 - template: infrastructure/terraform-function-stages-template.yml
@@ -23,7 +23,8 @@ stages:
     TerraformEnvVariables:
       webinar_VARIABLE_GROUP_ID: $(webinar-dev_VARIABLE_GROUP_ID)
       TF_VAR_ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-      TF_VAR_ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)      
+      TF_VAR_ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)   
+      buildConfiguration: $(buildConfiguration)   
 
 - template: infrastructure/terraform-function-stages-template.yml
   parameters:
@@ -35,3 +36,4 @@ stages:
       webinar_VARIABLE_GROUP_ID: $(webinar-prod_VARIABLE_GROUP_ID)
       TF_VAR_ARM_CLIENT_ID: $(ARM_CLIENT_ID)
       TF_VAR_ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+      buildConfiguration: $(buildConfiguration)
