@@ -15,7 +15,7 @@ jobs:
       deploy:
         steps:
         - download: current
-          artifact: function-${{ parameters.environment }}
+          artifact: ${{ parameters.servicename }}
         - task: AzureFunctionApp@1
           displayName: 'Azure Function Deploy: ${{ parameters.environmentDisplayName }} in ${{ parameters.environmentDisplayName }}'
           inputs:
