@@ -1,0 +1,37 @@
+# Starter pipeline
+
+trigger:
+  branches:
+    include:
+      - master
+  paths:
+    include:
+      - infrastructure
+
+variables:
+- group: terraform-secrets
+
+stages:
+- template: infrastructure/terraform-function-stages-template.yml
+  parameters:
+    environment: dev
+    environmentDisplayName: DEV
+    TerraformArguments: >-
+      -var department=IT
+    # For additional security, pass secret through environment instead of command line.
+    # Terraform recognizes TF_VAR prefixed environment variables.
+    TerraformEnvVariables:
+      webinar_VARIABLE_GROUP_ID: $(webinar-dev_VARIABLE_GROUP_ID)
+      TF_VAR_ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+      TF_VAR_ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)      
+
+- template: infrastructure/terraform-function-stages-template.yml
+  parameters:
+    environment: prod
+    environmentDisplayName: PROD
+    TerraformArguments: >-
+      -var department=DevOps
+    TerraformEnvVariables:
+      webinar_VARIABLE_GROUP_ID: $(webinar-prod_VARIABLE_GROUP_ID)
+      TF_VAR_ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+      TF_VAR_ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)

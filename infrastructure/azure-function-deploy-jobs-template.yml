@@ -1,0 +1,30 @@
+parameters:
+  environment: dev
+  environmentDisplayName: DEV
+  azureSubscription: 'webinar-arm-sc'
+  servicename:
+  serviceDisplayName:
+
+
+jobs:
+- deployment: ${{ parameters.serviceDisplayName }}_Deploy
+  displayName: Deployment of ${{ parameters.serviceDisplayName }}
+  environment: ${{ parameters.environmentDisplayName }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - download: current
+          artifact: function-${{ parameters.environment }}
+        - task: AzureFunctionApp@1
+          displayName: 'Azure Function Deploy: ${{ parameters.environmentDisplayName }} in ${{ parameters.environmentDisplayName }}'
+          inputs:
+            azureSubscription: ${{ parameters.azureSubscription }}
+            appType: functionAppLinux
+            appName: '${{ parameters.servicename }}-${{ parameters.environmentDisplayName }}'
+            package: '$(Pipeline.Workspace)/${{ parameters.servicename }}/$(buildConfiguration)/function.zip'
+            startUpCommand: 'func azure functionapp publish ${{ parameters.servicename }}-${{ parameters.environmentDisplayName }} --no-bundler'
+            appSettings: 
+              '-ServiceBus_connection_string $(ServiceBus_connection_string)
+              -public_IP $(public_IP)
+              -function_hostname $(function_hostname)'   

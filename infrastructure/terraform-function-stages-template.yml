@@ -1,0 +1,223 @@
+parameters:
+  environment: dev
+  environmentDisplayName: DEV
+  TerraformArguments: ''
+  TerraformEnvVariables:
+
+
+stages:
+- stage: Terraform_Plan_${{ parameters.environment }}
+  displayName: Plan ${{ parameters.environmentDisplayName }}
+  jobs:
+  - job: Terraform_Plan
+    displayName: Plan Terraform
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+
+    - bash: |
+        cp terraform_backend/* terraform
+      displayName: Configure backend
+      workingDirectory: infrastructure
+    - template: terraform-init-template.yml
+      parameters:
+        provisionStorage: true
+        TerraformDirectory: infrastructure/terraform
+        environment: ${{ parameters.environment }}
+
+    - bash: |
+        set -eu
+        export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+        terraform plan -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}
+      displayName: Terraform plan
+      workingDirectory: infrastructure/terraform
+      env:
+        ${{ parameters.TerraformEnvVariables }}
+    - bash: |
+        # Save a human-friendly version of the plan with passwords hidden
+        terraform show -no-color tfplan > plan.txt
+        # Remove terraform plan from published artifacts, as it contains clear-text secrets
+        rm tfplan
+        # Resource providers can be > 100MB large, we don't want them in the published artifacts.
+        rm -r .terraform
+      displayName: Save plan text
+      workingDirectory: infrastructure/terraform
+    - task: PublishPipelineArtifact@1
+      displayName: Publish plan artifact
+      inputs:
+        targetPath: infrastructure/terraform
+        artifact: terraform_resources_${{ parameters.environment }}
+
+- stage: Terraform_Apply_${{ parameters.environment }}
+  displayName: Apply ${{ parameters.environmentDisplayName }}
+  jobs:
+  - deployment: Apply
+    environment: ${{ parameters.environmentDisplayName }}
+    displayName: Apply Terraform
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
+    pool:
+      vmImage: ubuntu-latest
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - task: DownloadPipelineArtifact@2
+            displayName: Download plan
+            inputs:
+              artifactName: terraform_resources_${{ parameters.environment }}
+              targetPath: terraform_resources
+
+          - template: terraform-init-template.yml
+            parameters:
+              TerraformDirectory: terraform_resources
+              environment: ${{ parameters.environment }}
+
+          - bash: |
+              set -eu
+              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+              # terraform plan -detailed-exitcode exit codes:
+              # 0 - Succeeded, diff is empty (no changes)
+              # 1 - Errored
+              # 2 - Succeeded, there is a diff
+              # >2 - unexpected, crash or bug
+              if terraform plan -detailed-exitcode -input=false -out=tfplan -var environment=${{ parameters.environment }} ${{ parameters.TerraformArguments }}; then
+                echo "Terraform succeeded with no changes"
+                # NB terraform apply should still be run, e.g. if new outputs have been created
+              else
+                terraform_exitcode=$?
+                if [ $terraform_exitcode -eq 2 ]; then
+                  echo "Terraform succeeded with updates"
+                else
+                  echo "ERROR: terraform exited with code $terraform_exitcode"
+                  exit 1
+                fi
+              fi
+            displayName: Terraform plan
+            workingDirectory: terraform_resources
+            env:
+              ${{ parameters.TerraformEnvVariables }}
+          - bash: |
+              set -eux  # ensure pipeline stops if terraform fails or diff reports a difference
+              terraform show -no-color tfplan > newplan.txt
+              diff -u plan.txt newplan.txt
+            workingDirectory: terraform_resources
+            displayName: Check unchanged plan
+          - bash: |
+              set -eu
+              terraform apply -input=false -auto-approve tfplan
+            displayName: Terraform apply
+            workingDirectory: terraform_resources
+            env:
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              TF_VAR_ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              TF_VAR_ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+  - job: ReadTerraform
+    dependsOn: Apply
+    condition: always()
+    displayName: Read outputs
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+
+    - bash: |
+        cp terraform_backend/* terraform
+      displayName: Configure backend
+      workingDirectory: infrastructure
+    - template: terraform-init-template.yml
+      parameters:
+        TerraformDirectory: infrastructure/terraform
+        environment: ${{ parameters.environment }}
+
+    - template: terraform-outputs-template.yml
+      parameters:
+        TerraformDirectory: infrastructure/terraform
+ 
+  - job: CreateEnvVars
+    dependsOn: ReadTerraform
+    displayName: Create Env Vars in Azure DevOps
+    variables:
+      ServiceBus_connection_string: $[ dependencies.ReadTerraform.outputs['Outputs.ServiceBus_connection_string'] ]  
+      public_IP: $[ dependencies.ReadTerraform.outputs['Outputs.public_IP'] ] 
+      function_hostname: $[ dependencies.ReadTerraform.outputs['Outputs.function_hostname'] ] 
+    steps:
+      - bash: |
+          curl -fL -XPUT -H "Authorization:Bearer $(System.AccessToken)" -H "Content-Type:application/json" \
+          -d '{
+            "name": "webinar-${{ parameters.environment }}",
+            "variableGroupProjectReferences": [
+              {
+                "projectReference": {
+                  "name": "$(System.TeamProject)"
+                },
+                "name": "webinar-${{ parameters.environment }}"
+              }
+            ],                
+            "variables": {
+              "ServiceBus_connection_string": {
+                "isSecret": false,
+                "value": "$(ServiceBus_connection_string)"
+              },
+              "public_IP": {
+                "isSecret": false,
+                "value": "$(public_IP)"
+              },
+              "function_hostname": {
+                "isSecret": false,
+                "value": "$(function_hostname)"
+              }                                                   
+            }
+          }' \
+          --url "$(System.TeamFoundationCollectionUri)/_apis/distributedtask/variablegroups/$webinar_VARIABLE_GROUP_ID?api-version=6.0-preview.2"
+        displayName: 'Set variable in variable group webinar-${{ parameters.environment }}'  
+        env:
+          ${{ parameters.TerraformEnvVariables }}
+
+- stage: Build_Function
+  displayName: Build Function
+  dependsOn: Terraform_Apply_${{ parameters.environment }}      
+  jobs:    
+    - job: BuildFunction
+      variables:
+        - group: webinar-${{ parameters.environment }}    
+      steps:
+      - task: UseDotNet@2
+        displayName: Install .NET Core 3.1 SDK
+        inputs:
+          packageType: sdk
+          version: '3.1.404'
+      - task: DotNetCoreCLI@2
+        displayName: 'Restore project dependencies'
+        inputs:
+          command: 'restore'
+          projects: '$(Build.SourcesDirectory)/function/*.csproj'
+      - task: DotNetCoreCLI@2
+        displayName: 'Build the project - $(buildConfiguration)'
+        inputs:
+          command: 'build'
+          arguments: '--no-restore --configuration $(buildConfiguration)'
+          projects: '$(Build.SourcesDirectory)/function/*.csproj'
+      - task: DotNetCoreCLI@2
+        displayName: 'Publish the project - $(buildConfiguration)'
+        inputs:
+          command: 'publish'
+          projects: '$(Build.SourcesDirectory)/function/*.csproj'
+          publishWebProjects: false
+          arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
+          zipAfterPublish: true
+      - publish: '$(Build.ArtifactStagingDirectory)'
+        artifact: function-${{ parameters.environment }}
+
+- stage: Function_Deploy_${{ parameters.environment }}       
+  displayName: Deploy Function to ${{ parameters.environment }}
+  dependsOn: Build_Function
+  variables:
+    - group: webinar-${{ parameters.environment }}  
+  jobs:
+    - template: azure-function-deploy-jobs-template.yml
+      parameters:
+        environment: ${{ parameters.environment }}
+        environmentDisplayName: ${{ parameters.environmentDisplayName }} 
+        servicename: function-${{ parameters.environment }}
+        serviceDisplayName: Function-${{ parameters.environmentDisplayName }}    
