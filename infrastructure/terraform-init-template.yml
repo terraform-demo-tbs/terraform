@@ -1,7 +1,7 @@
 parameters:
   environment: dev
   provisionStorage: false
-  TerraformVersion: 0.14
+  TerraformVersion: 0.14.4
   TerraformDirectory:
   TerraformBackendServiceConnection: webinar-arm-sc
   TerraformEnvironmentServiceConnection: webinar-arm-sc
@@ -53,10 +53,14 @@ steps:
       fi
     addSpnToEnvironment: true
 
-- task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+- task: Terraform@2
   displayName: Install Terraform
   inputs:
-    terraformVersion: ${{ parameters.TerraformVersion }}
+    Arguments: 
+    InstallTerraform: true
+    Version: ${{ parameters.TerraformVersion }}
+    UseAzureSub: false
+  
 
 - task: AzureCLI@1
   displayName: Terraform credentials
