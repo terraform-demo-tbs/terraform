@@ -21,7 +21,7 @@ stages:
     # For additional security, pass secret through environment instead of command line.
     # Terraform recognizes TF_VAR prefixed environment variables.
     TerraformEnvVariables:
-      moeidentity_VARIABLE_GROUP_ID: $(webinar-dev_VARIABLE_GROUP_ID)
+      webinar_VARIABLE_GROUP_ID: $(webinar-dev_VARIABLE_GROUP_ID)
       TF_VAR_ARM_CLIENT_ID: $(ARM_CLIENT_ID)
       TF_VAR_ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)      
 
@@ -32,6 +32,6 @@ stages:
     TerraformArguments: >-
       -var department=DevOps
     TerraformEnvVariables:
-      moeidentity_VARIABLE_GROUP_ID: $(webinar-prod_VARIABLE_GROUP_ID)
+      webinar_VARIABLE_GROUP_ID: $(webinar-prod_VARIABLE_GROUP_ID)
       TF_VAR_ARM_CLIENT_ID: $(ARM_CLIENT_ID)
       TF_VAR_ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
