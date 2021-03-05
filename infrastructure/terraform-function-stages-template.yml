@@ -211,7 +211,7 @@ stages:
 
 - stage: Function_Deploy_${{ parameters.environment }}       
   displayName: Deploy Function to ${{ parameters.environment }}
-  dependsOn: Build_Function
+  dependsOn: Build_Function_${{ parameters.environment }}
   variables:
     - group: webinar-${{ parameters.environment }}  
   jobs:
