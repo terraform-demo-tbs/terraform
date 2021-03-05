@@ -1,4 +1,4 @@
-resource "azurerm_kubernetes_cluster" "demo-aks" {
+/* resource "azurerm_kubernetes_cluster" "demo-aks" {
   name                = "aks-${var.environment}"
   location            = azurerm_resource_group.demo-resource-group.location
   resource_group_name = azurerm_resource_group.demo-resource-group.name
@@ -20,4 +20,4 @@ resource "azurerm_kubernetes_cluster" "demo-aks" {
     source      = "Terraform"
     environment    = var.environment
   }
-}
+} */
