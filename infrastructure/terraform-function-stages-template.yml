@@ -207,7 +207,7 @@ stages:
           arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
           zipAfterPublish: true
       - publish: '$(Build.ArtifactStagingDirectory)'
-        artifact: function-${{ parameters.environment }}
+        artifact: demo-function-${{ parameters.environment }}
 
 - stage: Function_Deploy_${{ parameters.environment }}       
   displayName: Deploy Function to ${{ parameters.environment }}
