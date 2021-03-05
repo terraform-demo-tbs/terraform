@@ -174,7 +174,7 @@ stages:
         env:
           ${{ parameters.TerraformEnvVariables }}
 
-- stage: Build_Function
+- stage: Build_Function_${{ parameters.environment }}
   displayName: Build Function
   dependsOn: Terraform_Apply_${{ parameters.environment }}      
   jobs:    
@@ -220,4 +220,4 @@ stages:
         environment: ${{ parameters.environment }}
         environmentDisplayName: ${{ parameters.environmentDisplayName }} 
         servicename: function-${{ parameters.environment }}
-        serviceDisplayName: Function-${{ parameters.environmentDisplayName }}    
+        serviceDisplayName: Function_${{ parameters.environmentDisplayName }}    
