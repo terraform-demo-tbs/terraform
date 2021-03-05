@@ -53,13 +53,10 @@ steps:
       fi
     addSpnToEnvironment: true
 
-- task: Terraform@2
+- task: TerraformInstaller@0
   displayName: Install Terraform
   inputs:
-    Arguments: 
-    InstallTerraform: true
-    Version: ${{ parameters.TerraformVersion }}
-    UseAzureSub: false
+    terraformVersion: ${{ parameters.TerraformVersion }}
   
 
 - task: AzureCLI@1
