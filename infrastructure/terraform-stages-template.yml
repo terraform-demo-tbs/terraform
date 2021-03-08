@@ -173,3 +173,20 @@ stages:
         displayName: 'Set variable in variable group webinar-${{ parameters.environment }}'  
         env:
           ${{ parameters.TerraformEnvVariables }}
+
+  - job: CreateKeyVaultSecret
+    dependsOn: ReadTerraform
+    displayName: Create KeyVault Secrets
+    variables:
+      client_certificate: $[ dependencies.ReadTerraform.outputs['Outputs.client_certificate'] ] 
+      kube_config: $[ dependencies.ReadTerraform.outputs['Outputs.kube_config'] ] 
+    steps:
+      - task: AzureCLI@2
+        inputs:
+          scriptType: bash
+          addSpnToEnvironment: true
+          azureSubscription: webinar-arm-sc
+          scriptLocation: inlineScript
+          inlineScript: | 
+            az keyvault secret set --vault-name 'demo-keyvault-tbs' --name 'AKS-Client-Certificate' --value $(client_certificate)
+            az keyvault secret set --vault-name 'demo-keyvault-tbs' --name 'AKS-kube-config' --value $(kube_config)
