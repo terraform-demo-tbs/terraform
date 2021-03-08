@@ -188,4 +188,4 @@ stages:
           azureSubscription: webinar-arm-sc
           scriptLocation: inlineScript
           inlineScript: | 
-            az keyvault secret set --vault-name 'demo-keyvault-tbs' --name 'AKS-Client-Certificate' --value $(client_certificate)
+            az keyvault secret set --vault-name 'demo-keyvault-tbs' --name 'AKS-Client-Certificate-${{ parameters.environment }}' --value $(client_certificate)
