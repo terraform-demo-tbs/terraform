@@ -27,4 +27,5 @@ jobs:
             appSettings: 
               '-ServiceBus_connection_string $(ServiceBus_connection_string)
               -public_IP $(public_IP)
-              -function_hostname $(function_hostname)'   
+              -function_hostname $(function_hostname)
+              -QueueName $(QueueName)'   
