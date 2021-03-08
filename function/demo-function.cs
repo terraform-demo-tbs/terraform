@@ -13,9 +13,6 @@ namespace Company.Function
 {
     public static class DemoFunction
     {
-        static string connectionString = "Endpoint=sb://demo-namespace-dev.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=C+L8mEbSfm/aa4gU11dYu9dzoJ+vDlzCAsdEAcDROYU=";
-        static string queueName = "demo-queue-dev";
-
         [FunctionName("DemoFunction")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
@@ -33,13 +30,21 @@ namespace Company.Function
                 ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
                 : $"Hello, {name}. This HTTP triggered function executed successfully.";
 
-            await SendMessageAsync(name);
-
-            return new OkObjectResult(responseMessage);
+            try
+            {
+                await SendMessageAsync(name);
+                return new OkObjectResult(responseMessage);
+            }
+            catch (System.Exception ex)
+            {
+                return new BadRequestObjectResult(ex.Message);
+            }
         }
 
         public static async Task SendMessageAsync(string inputMessage)
         {
+            var connectionString = System.Configuration.ConfigurationManager.AppSettings["ServiceBus_connection_string"];
+            var queueName = System.Configuration.ConfigurationManager.AppSettings["QueueName"];
             // create a Service Bus client 
             await using (ServiceBusClient client = new ServiceBusClient(connectionString))
             {

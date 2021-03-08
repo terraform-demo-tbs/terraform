@@ -166,7 +166,11 @@ stages:
               "function_hostname": {
                 "isSecret": false,
                 "value": "$(function_hostname)"
-              }                                                   
+              },
+              "QueueName": {
+                "isSecret": false,
+                "value": "demo-queue-${{ parameters.environment }}"
+              }                                                                   
             }
           }' \
           --url "$(System.TeamFoundationCollectionUri)/_apis/distributedtask/variablegroups/$webinar_VARIABLE_GROUP_ID?api-version=6.0-preview.2"
