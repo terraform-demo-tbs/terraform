@@ -43,8 +43,8 @@ namespace Company.Function
 
         public static async Task SendMessageAsync(string inputMessage)
         {
-            var connectionString = System.Configuration.ConfigurationManager.AppSettings["ServiceBus_connection_string"];
-            var queueName = System.Configuration.ConfigurationManager.AppSettings["QueueName"];
+            var connectionString = Environment.GetEnvironmentVariable("ServiceBus_connection_string", EnvironmentVariableTarget.Process);
+            var queueName = Environment.GetEnvironmentVariable("QueueName", EnvironmentVariableTarget.Process);
             // create a Service Bus client 
             await using (ServiceBusClient client = new ServiceBusClient(connectionString))
             {
