@@ -12,7 +12,6 @@ pool:
 
 variables:
 - group: terraform-commons
-- group: terraform-keyvault
 
 stages:
 - template: infrastructure/terraform-stages-template.yml
