@@ -7,6 +7,8 @@ trigger:
   paths:
     include:
       - infrastructure
+pool:
+  name: 'ocp4-ngrp6'
 
 variables:
 - group: terraform-commons
