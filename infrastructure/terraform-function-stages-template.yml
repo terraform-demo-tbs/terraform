@@ -188,7 +188,7 @@ stages:
           azureSubscription: webinar-arm-sc
           scriptLocation: inlineScript
           inlineScript: | 
-            az keyvault secret set --vault-name 'demo-keyvault-tbs' --name 'ServiceBus-connection-string--${{ parameters.environment }}' --value $(ServiceBus_connection_string)          
+            az keyvault secret set --vault-name 'demo-keyvault-tbs' --name 'ServiceBus-connection-string-${{ parameters.environment }}' --value '$(ServiceBus_connection_string)'          
 
 - stage: Build_Function_${{ parameters.environment }}
   displayName: Build Function
