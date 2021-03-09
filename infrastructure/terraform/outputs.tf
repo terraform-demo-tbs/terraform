@@ -6,9 +6,9 @@ output "public_IP" {
   value = azurerm_public_ip.demo-public-ip.ip_address
 }
 
-output "client_certificate" {
+/* output "client_certificate" {
   value = azurerm_kubernetes_cluster.demo-aks.kube_config.0.client_certificate
-}
+} */
 
 output "function_hostname" {
   value = azurerm_function_app.demo-function.default_hostname

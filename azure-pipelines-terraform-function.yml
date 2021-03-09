@@ -10,6 +10,7 @@ trigger:
 
 variables:
 - group: terraform-commons
+- group: terraform-keyvault
 
 stages:
 - template: infrastructure/terraform-function-stages-template.yml

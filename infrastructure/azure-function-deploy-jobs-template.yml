@@ -25,7 +25,7 @@ jobs:
             package: '$(Pipeline.Workspace)/${{ parameters.servicename }}/$(buildConfiguration)/function.zip'
             startUpCommand: 'func azure functionapp publish ${{ parameters.servicename }} --no-bundler'
             appSettings: 
-              '-ServiceBus_connection_string $(ServiceBus_connection_string)
+              '-ServiceBus_connection_string $(ServiceBus-connection-string-${{ parameters.environment }})
               -public_IP $(public_IP)
               -function_hostname $(function_hostname)
               -QueueName $(QueueName)'   
