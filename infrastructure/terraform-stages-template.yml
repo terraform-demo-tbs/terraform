@@ -12,8 +12,8 @@ stages:
   - job: Terraform_Plan
     displayName: Plan Terraform
     condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
-    pool:
-      vmImage: ubuntu-latest
+#     pool:
+#       vmImage: ubuntu-latest
     steps:
 
     - bash: |
@@ -56,8 +56,8 @@ stages:
     environment: ${{ parameters.environmentDisplayName }}
     displayName: Apply Terraform
     condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), variables['RUN_FLAG_TERRAFORM']))
-    pool:
-      vmImage: ubuntu-latest
+#     pool:
+#       vmImage: ubuntu-latest
     strategy:
       runOnce:
         deploy:
@@ -117,8 +117,8 @@ stages:
     dependsOn: Apply
     condition: always()
     displayName: Read outputs
-    pool:
-      vmImage: ubuntu-latest
+#     pool:
+#       vmImage: ubuntu-latest
     steps:
 
     - bash: |
